@@ -20,6 +20,14 @@ public class OutputStreamHandler {
         writerIndex = 0;
     }
 
+    public OutputStreamHandler(String filePath, int bufferSize) throws IOException {
+        File file = new File(filePath);
+        writer = new RandomAccessFile(file, "rw");
+        FileOutputStream os = new FileOutputStream(writer.getFD());
+        bos = new BufferedOutputStream(os, bufferSize);
+        writerIndex = 0;
+    }
+
     public long getFilePointer() throws IOException{
 //        return writer.getFilePointer();
         return writerIndex;

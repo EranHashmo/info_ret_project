@@ -10,7 +10,7 @@ import static java.lang.System.currentTimeMillis;
  * Created by eranhashmo on 5/6/2021.
  */
 public class IndexWriter {
-    private final int REVIEWS_TO_READ = 3 * 1000 * 1000;
+    private final int REVIEWS_TO_READ =  2500 * 1000;
 
         private final int MAX_REVIEWS_IN_MEM = 2*1000*1000;
     private final int MAX_TRIPLETS_IN_MEM = 3 * 1000*1000;
@@ -20,6 +20,8 @@ public class IndexWriter {
 //    public static final String DICT_REVIEW_PTRS = "dict_review_ptrs";
     public static final String DICT_REVIEW_PIDS = "dict_review_PIDs";
     public static final String TOKEN_MAP = "dict_index";
+
+//    public static final String LIST_POINTERS = "listPointers";
     public static final String POSTING_LIST_FILE = "posting_lists";
 
     public static final String INTERMEDIATE_TOKEN_FILE = "intermediate_token_file";
@@ -27,8 +29,8 @@ public class IndexWriter {
     public static final String INTERMEDIATE_SEPARATOR = "$";
 
     private int termPointer;
-
-    private TreeSet<String> termIDs;
+    private int[] termLengths;
+//    private TreeSet<String> termIDs;
 
     public IndexWriter() {
     }
@@ -230,7 +232,7 @@ public class IndexWriter {
 //        InputStreamHandler interReader1 = new InputStreamHandler(dir + File.separator + INTERMEDIATE_TOKEN_FILE);
 //        OutputStreamHandler interWriter = new OutputStreamHandler(dir + File.separator + INTERMEDIATE_TOKEN_FILE2);
 
-        termIDs = new TreeSet<>();
+//        termIDs = new TreeSet<>();
         termPointer = 0;
 
         long start = currentTimeMillis();
@@ -238,7 +240,7 @@ public class IndexWriter {
 //        ArrayList<Long> filePointers = externalSortFirst(interReader1, interWriter);
         long end = currentTimeMillis();
         System.out.println("first stage time: " + (end - start));
-
+//        System.out.println("terms: " + termIDs.size());
 //        interReader1.close();
 //        interWriter.close();
 
@@ -262,6 +264,7 @@ public class IndexWriter {
     private ArrayList<Long> externalSortFirst(String dir) throws IOException{
         InputStreamHandler sortFileReader = new InputStreamHandler(dir + File.separator + INTERMEDIATE_TOKEN_FILE);
         OutputStreamHandler sortFileWriter = new OutputStreamHandler(dir + File.separator + INTERMEDIATE_TOKEN_FILE2);
+        TreeSet<String> termIDs = new TreeSet<>();
 
         long leftFilePointer = 0;
         ArrayList<TokenTriplet> allBuffer;
@@ -285,6 +288,19 @@ public class IndexWriter {
         }
         sortFileReader.close();
         sortFileWriter.close();
+
+        OutputStreamHandler termStringWriter = new OutputStreamHandler(dir + File.separator + TERM_FILE);
+//        OutputStreamHandler indexWriter = new OutputStreamHandler(dir + File.separator + TOKEN_MAP);
+        int termIndex = 0;
+        termLengths = new int[termIDs.size()];
+        for (String s: termIDs) {
+//            indexWriter.writeInt(termPointer);
+            termLengths[termIndex] = s.length();
+            termIndex++;
+            termStringWriter.writeString(s);
+        }
+        termStringWriter.close();
+
         return filePointers;
     }
 
@@ -297,83 +313,103 @@ public class IndexWriter {
      */
     private void externalSortSecond(ArrayList<Long> blockPointers, String dir) throws IOException
     {
-        InputStreamHandler intermediateFile = new InputStreamHandler(dir + File.separator + INTERMEDIATE_TOKEN_FILE2, MAX_TRIPLETS_IN_MEM);
+        System.out.println("------------------ externalSortSecond start --------------");
 
+        InputStreamHandler intermediateFile = new InputStreamHandler(dir + File.separator + INTERMEDIATE_TOKEN_FILE2);
         OutputStreamHandler indexWriter = new OutputStreamHandler(dir + File.separator + TOKEN_MAP);
         OutputStreamHandler listIndexWriter = new OutputStreamHandler(dir + File.separator + POSTING_LIST_FILE);
-//        OutputStreamHandler termStringWriter = new OutputStreamHandler(dir + File.separator + TERM_FILE);
-        FileWriter termStringWriter = new FileWriter(dir + File.separator + TERM_FILE);
+
+//        InputStreamHandler termReader = new InputStreamHandler(dir + File.separator + TERM_FILE);
+        BufferedReader termReader = new BufferedReader(new FileReader (dir + File.separator + TERM_FILE));
+//        FileWriter termStringWriter = new FileWriter(dir + File.separator + TERM_FILE);
 
         TreeSet<Integer> activePointers = new TreeSet<>();
         ArrayList<Long> filePointers = new ArrayList<>(blockPointers);
 //        LinkedList<TokenTriplet> allInstances;
         ArrayList<TokenTriplet> allInstances;
         int reads;
+        int curLength;
+        int curTermIndex = 0;
+        char[] nextTermArr;
+        String nextTerm;
         for (int p = 0; p < blockPointers.size(); p++) {
             activePointers.add(p);
         }
 
-        while (activePointers.size() > 0) {
-            String nextTerm = termIDs.pollFirst();
-            allInstances = new ArrayList<>();
-            for (int p: activePointers) {
-                intermediateFile.seek(filePointers.get(p));
-                reads = intermediateFile.readAllInstances(allInstances, nextTerm);
+        try {
+            while (activePointers.size() > 0) {
+                curLength = termLengths[curTermIndex];
+                nextTermArr = new char[curLength];
+                termReader.read(nextTermArr, 0, curLength);
+                nextTerm = new String(nextTermArr);
+                curTermIndex++;
+//            String nextTerm = termIDs.pollFirst();
 
-                if (reads != 0) {
-                    filePointers.set(p, intermediateFile.getFilePointer());
+                allInstances = new ArrayList<>();
+                for (int p : activePointers) {
+                    intermediateFile.seek(filePointers.get(p));
+                    reads = intermediateFile.readAllInstances(allInstances, nextTerm);
+
+                    if (reads != 0) {
+                        filePointers.set(p, intermediateFile.getFilePointer());
+                    }
                 }
-            }
-            for (int p = 0; p < blockPointers.size() - 1; p++) {
-                if (filePointers.get(p) >= blockPointers.get(p+1)) {
-                    activePointers.remove(p);
+                for (int p = 0; p < blockPointers.size() - 1; p++) {
+                    if (filePointers.get(p) >= blockPointers.get(p + 1)) {
+                        activePointers.remove(p);
+                    }
                 }
+                if (filePointers.get(filePointers.size() - 1) == intermediateFile.length()) {
+                    activePointers.remove(filePointers.size() - 1);
+                }
+//            writeTokens(allInstances, indexWriter, listIndexWriter, termStringWriter);
+                writeTokens(allInstances, indexWriter, listIndexWriter);
+
             }
-            if (filePointers.get(filePointers.size() -1) == intermediateFile.length()) {
-                activePointers.remove(filePointers.size() -1);
-            }
-            writeTokens(allInstances, indexWriter, listIndexWriter, termStringWriter);
+        } catch (OutOfMemoryError e) {
+            e.printStackTrace();
+        } finally {
+            intermediateFile.close();
+//        termStringWriter.close();
+            indexWriter.close();
+            listIndexWriter.close();
+            termReader.close();
         }
-        intermediateFile.close();
-        termStringWriter.close();
-        indexWriter.close();
-        listIndexWriter.close();
     }
 
     /**
      * Write complete dictionary token values into the index files from a list of triplets.
      * @param triplets: list of TokenTriplets contains all triplets corresponding to a single term
-     * @param indexWriter
+//     * @param indexWriter
      * @param listIndexWriter
-     * @param termStringWriter
+//     * @param termStringWriter
      * @return
      * @throws IOException
      */
-    public int writeTokens(List<TokenTriplet> triplets,
+//    public int writeTokens(List<TokenTriplet> triplets,
+//                           OutputStreamHandler indexWriter,
+//                           OutputStreamHandler listIndexWriter,
+//                           FileWriter termStringWriter) throws IOException{
+    public void writeTokens(List<TokenTriplet> triplets,
                            OutputStreamHandler indexWriter,
-                           OutputStreamHandler listIndexWriter,
-                           FileWriter termStringWriter) throws IOException{
+                           OutputStreamHandler listIndexWriter) throws IOException{
         if (triplets.isEmpty()) {
-            return 0;
+            return;
         }
 
-        int numOfTokens = 0;
         String term = triplets.get(0).getTerm();
         LinkedList<Integer> containingReviews = new LinkedList<>();
         LinkedList<Short> containingReviewsFreq = new LinkedList<>();
         for (TokenTriplet t: triplets) {
             containingReviews.add(t.getReviewID());
             containingReviewsFreq.add(t.getFrequency());
-            numOfTokens += t.getFrequency();
         }
         indexWriter.writeInt(termPointer);
         termPointer += term.length();
         indexWriter.writeLong(listIndexWriter.getFilePointer());
         writeContainingReviews(containingReviews, containingReviewsFreq, listIndexWriter);
 
-//        termStringWriter.writeString(term);
-        termStringWriter.write(term);
-        return numOfTokens;
+//        termStringWriter.write(term);
     }
 
 

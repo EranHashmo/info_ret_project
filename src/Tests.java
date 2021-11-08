@@ -61,25 +61,25 @@ public class Tests {
         testReviews.put(999, new Review("B006F2NYI2", 1, 2, 1, 57));
 
         System.out.println("num of reviews: " + ir.getNumberOfReviews());
-//        for (int reviewID : testReviews.keySet()) {
-//            System.out.println("-------- review " + reviewID + "------------");
-//            System.out.println(
-//                    "product id = " + ir.getProductId(reviewID)
-//                            + " || should be: " + testReviews.get(reviewID).getProductID());
-//            System.out.println(
-//                    "score of review = " + ir.getReviewScore(reviewID)
-//                            + " || should be: " + testReviews.get(reviewID).getScore());
-//            System.out.println(
-//                    "helpfulness1 = " + ir.getReviewHelpfulnessNumerator(reviewID)
-//                            + " || should be: " + testReviews.get(reviewID).getHelpfulness1());
-//            System.out.println(
-//                    "helpfulness2 = " + ir.getReviewHelpfulnessDenominator(reviewID)
-//                            + " || should be: " + testReviews.get(reviewID).getHelpfulness2());
-//            System.out.println(
-//                    "num of tokens = " + ir.getReviewLength(reviewID)
-//                            + " || should be: " + testReviews.get(reviewID).getNumOfTokens());
-//            System.out.println("-------- review " + reviewID + " end ------------");
-//        }
+        for (int reviewID : testReviews.keySet()) {
+            System.out.println("-------- review " + reviewID + "------------");
+            System.out.println(
+                    "product id = " + ir.getProductId(reviewID)
+                            + " || should be: " + testReviews.get(reviewID).getProductID());
+            System.out.println(
+                    "score of review = " + ir.getReviewScore(reviewID)
+                            + " || should be: " + testReviews.get(reviewID).getScore());
+            System.out.println(
+                    "helpfulness1 = " + ir.getReviewHelpfulnessNumerator(reviewID)
+                            + " || should be: " + testReviews.get(reviewID).getHelpfulness1());
+            System.out.println(
+                    "helpfulness2 = " + ir.getReviewHelpfulnessDenominator(reviewID)
+                            + " || should be: " + testReviews.get(reviewID).getHelpfulness2());
+            System.out.println(
+                    "num of tokens = " + ir.getReviewLength(reviewID)
+                            + " || should be: " + testReviews.get(reviewID).getNumOfTokens());
+            System.out.println("-------- review " + reviewID + " end ------------");
+        }
 
         testTokens = new HashMap<>();
         testTokens.put("it", new int[]{591, 1504});
