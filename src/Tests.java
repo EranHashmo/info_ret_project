@@ -4,6 +4,7 @@ import webdata.Parser;
 import webdata.Review;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 
@@ -90,10 +91,29 @@ public class Tests {
         System.out.println("num of tokens: " + ir.getTokenSizeOfReviews());
         for (String token: testTokens.keySet()) {
             System.out.println("------ token " + token + "-----");
-            System.out.println("getTokenFrequency: " + ir.getTokenFrequency(token)); // + " || should be: " + testTokens.get(token)[0]);
-            System.out.println("getTokenCollectionFrequency " + ir.getTokenCollectionFrequency(token) ); //+ " || should be: " + testTokens.get(token)[1]);
-//            System.out.println(ir.getReviewsWithToken(token));
+            System.out.println("getTokenFrequency: " + ir.getTokenFrequency(token) + " || should be: " + testTokens.get(token)[0]);
+            System.out.println("getTokenCollectionFrequency " + ir.getTokenCollectionFrequency(token) + " || should be: " + testTokens.get(token)[1]);
+
+//            getReviewsWithToken(ir, token);
             System.out.println("------ token " + token + " end -----");
+        }
+    }
+
+    private static void getReviewsWithToken(IndexReader ir, String token) {
+        Enumeration e;
+        System.out.println("getReviewsWithToken: " + token); // problem
+        e = ir.getReviewsWithToken(token);
+        File termResults = new File("getReviewsWithToken_TEST_" + token);
+        try {
+            FileWriter writer = new FileWriter(termResults);
+            while (e.hasMoreElements()) {
+//                System.out.println(e.nextElement());
+                writer.write(e.nextElement().toString() + "\n");
+            }
+            writer.close();
+        } catch (IOException ex) {
+            System.out.println("failed to write termResults: " + token);
+            ex.printStackTrace();
         }
     }
 
@@ -117,6 +137,6 @@ public class Tests {
     {
         removeIndex();
         buildIndex();
-//        readTest();
+        readTest();
     }
 }

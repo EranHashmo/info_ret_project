@@ -44,20 +44,54 @@ public class InputStreamHandler {
         return reader.length();
     }
 
+//    /**
+//     * reads all instances of triplets with given term from file.
+//     * Assume the file is sorted and all instances are found together.
+////     * @param term term to search.
+//     * @return
+//     */
+//    public int readAllInstances(List<TokenTriplet> allInstances, String term) throws IOException {
+//        int counter = 0;
+//        if (this.getFilePointer() >= this.length()) {
+//            return counter;
+//        }
+//        long lastPointer = 0;
+////        long lastPointer = getFilePointer();
+//        TokenTriplet cur = readTriplet();
+//
+//        if (!Objects.equals(cur.getTerm(), term)) {
+//            this.seek(lastPointer);
+//            return counter;
+//        }
+////        String term = cur.getTerm();
+//        while (Objects.equals(cur.getTerm(), term)) {
+//            allInstances.add(cur);
+//            counter++;
+//            if (this.getFilePointer() == this.length()) {
+//                return counter;
+//            }
+//            lastPointer = this.getFilePointer();
+//            cur = readTriplet();
+//        }
+//        this.seek(lastPointer);
+//        return counter;
+//    }
+
+
     /**
-     * reads all instances of triplets with given term from file.
+     * reads all instances of couples with given term from file.
      * Assume the file is sorted and all instances are found together.
-//     * @param term term to search.
+     //     * @param term term to search.
      * @return
      */
-    public int readAllInstances(List<TokenTriplet> allInstances, String term) throws IOException {
+    public int readAllInstances(List<TokenCouple> allInstances, String term) throws IOException {
         int counter = 0;
         if (this.getFilePointer() >= this.length()) {
             return counter;
         }
         long lastPointer = 0;
 //        long lastPointer = getFilePointer();
-        TokenTriplet cur = readTriplet();
+        TokenCouple cur = readCouple();
 
         if (!Objects.equals(cur.getTerm(), term)) {
             this.seek(lastPointer);
@@ -71,7 +105,7 @@ public class InputStreamHandler {
                 return counter;
             }
             lastPointer = this.getFilePointer();
-            cur = readTriplet();
+            cur = readCouple();
         }
         this.seek(lastPointer);
         return counter;
@@ -94,6 +128,38 @@ public class InputStreamHandler {
             bufferCheck ++;
         }
         return triplets;
+    }
+
+
+    /**
+     * @param bufferSize: number of couples to read
+     * @return
+     * @throws IOException
+     */
+    public ArrayList<TokenCouple> readCouples(int bufferSize)
+            throws IOException{
+        int bufferCheck = 0;
+
+        ArrayList<TokenCouple> couples = new ArrayList<>(bufferSize);
+        while (bufferCheck < bufferSize && this.getFilePointer() < this.length()) {
+//            if (bufferCheck == 52934) System.out.println("here");     // debug
+            TokenCouple tc = readCouple();
+            couples.add(tc);
+            bufferCheck ++;
+        }
+        return couples;
+    }
+
+
+    /**
+     * Read a single couple (reviewID, term).
+     * @return a new TokenCouple object.
+     * @throws IOException
+     */
+    private TokenCouple readCouple() throws IOException{
+        int reviewID = readInt();
+        String term = readTerm();
+        return new TokenCouple(term, reviewID);
     }
 
     /**

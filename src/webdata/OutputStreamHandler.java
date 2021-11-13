@@ -61,6 +61,18 @@ public class OutputStreamHandler {
     }
 
     /**
+     * Write a single token couple: (reviewID, term) onto a temporary file for external sort.
+     * @param term: String, the term of the token.
+     * @param reviewID: review in which the token was found.
+     * @throws IOException
+     */
+    public void writeCouple(String term, int reviewID) throws
+            IOException{
+        writeInt(reviewID);
+        writeString(term + IndexWriter.INTERMEDIATE_SEPARATOR);
+    }
+
+    /**
      * write multiple token triplets from a list after sorting the triplets by term
      *  and a secondary sort by reviewID
      * @param list: list of token triplets. serves as a buffer to read, sort and write blocks

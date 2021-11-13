@@ -120,7 +120,9 @@ public class IndexWriter {
                     reviewDataWriter.writeInt(rr.getHelpfulness2());
                     reviewDataWriter.writeInt(rr.getScore());
 
-                    numTokensInCurrent = getTokenTriplets(rr.getText(), curReviewID, intermediateFileWriter);
+//                    numTokensInCurrent = getTokenTriplets(rr.getText(), curReviewID, intermediateFileWriter);
+                    numTokensInCurrent = getTokenCouples(rr.getText(), curReviewID, intermediateFileWriter);
+
 //                    reviewDataWriter.writeVInt(numTokensInCurrent);
                     reviewDataWriter.writeInt(numTokensInCurrent);
                     numOfTokens += numTokensInCurrent;
@@ -220,6 +222,22 @@ public class IndexWriter {
         return numOfTokens;
     }
 
+    private int getTokenCouples(String text, int reviewID, OutputStreamHandler intermediateFileWriter)
+            throws IOException {
+        List<String> splitTerms = Arrays.asList(text.toLowerCase().split("[\\W_]"));
+//        HashMap<String, Short> histogram = new HashMap<>();
+        int numOfTokens = 0;
+        if (splitTerms.size() == 0) {
+            return 0;
+        }
+        for (String t : splitTerms) {
+            if (t.length() > 0) {
+                intermediateFileWriter.writeCouple(t, reviewID);
+            }
+        }
+        return numOfTokens;
+    }
+
     /**
      * Manage the construction of the dictionary:
      *  first, read blocks of triplets from the temporary file, sort them and rewrite the sorted triplets
@@ -267,23 +285,28 @@ public class IndexWriter {
         TreeSet<String> termIDs = new TreeSet<>();
 
         long leftFilePointer = 0;
-        ArrayList<TokenTriplet> allBuffer;
+//        ArrayList<TokenTriplet> allBuffer;
+        ArrayList<TokenCouple> allBuffer;
         ArrayList<Long> filePointers = new ArrayList<>();
 
         sortFileReader.seek(0);
-        allBuffer = sortFileReader.read_triplets(MAX_TRIPLETS_IN_MEM);
+//        allBuffer = sortFileReader.read_triplets(MAX_TRIPLETS_IN_MEM);
+        allBuffer = sortFileReader.readCouples(MAX_TRIPLETS_IN_MEM);
 
         while (!allBuffer.isEmpty()) {
             filePointers.add(leftFilePointer);
             sortFileWriter.seek(leftFilePointer);
             Collections.sort(allBuffer);
 //            sortFileWriter.writeTripletsFromList(allBuffer);
-            for (TokenTriplet t: allBuffer) {
-                sortFileWriter.writeTriplet(t.getTerm(), t.getReviewID(), t.getFrequency());
+//            for (TokenTriplet t: allBuffer) {
+            for (TokenCouple t: allBuffer) {
+//                sortFileWriter.writeTriplet(t.getTerm(), t.getReviewID(), t.getFrequency());
+                sortFileWriter.writeCouple(t.getTerm(), t.getReviewID());
                 termIDs.add(t.getTerm());
             }
             leftFilePointer = sortFileWriter.getFilePointer();
-            allBuffer = sortFileReader.read_triplets(MAX_TRIPLETS_IN_MEM);
+//            allBuffer = sortFileReader.read_triplets(MAX_TRIPLETS_IN_MEM);
+            allBuffer = sortFileReader.readCouples(MAX_TRIPLETS_IN_MEM);
 
         }
         sortFileReader.close();
@@ -325,8 +348,9 @@ public class IndexWriter {
 
         TreeSet<Integer> activePointers = new TreeSet<>();
         ArrayList<Long> filePointers = new ArrayList<>(blockPointers);
-//        LinkedList<TokenTriplet> allInstances;
-        ArrayList<TokenTriplet> allInstances;
+
+        ArrayList<TokenCouple> allInstances;
+//        ArrayList<TokenTriplet> allInstances;
         int reads;
         int curLength;
         int curTermIndex = 0;
@@ -379,31 +403,49 @@ public class IndexWriter {
 
     /**
      * Write complete dictionary token values into the index files from a list of triplets.
-     * @param triplets: list of TokenTriplets contains all triplets corresponding to a single term
+     * @param couples: list of TokenTriplets contains all triplets corresponding to a single term
 //     * @param indexWriter
      * @param listIndexWriter
 //     * @param termStringWriter
      * @return
      * @throws IOException
      */
-//    public int writeTokens(List<TokenTriplet> triplets,
+
+//    public void writeTokens(List<TokenTriplet> triplets,
 //                           OutputStreamHandler indexWriter,
-//                           OutputStreamHandler listIndexWriter,
-//                           FileWriter termStringWriter) throws IOException{
-    public void writeTokens(List<TokenTriplet> triplets,
-                           OutputStreamHandler indexWriter,
-                           OutputStreamHandler listIndexWriter) throws IOException{
-        if (triplets.isEmpty()) {
+//                           OutputStreamHandler listIndexWriter) throws IOException{
+    public void writeTokens(List<TokenCouple> couples,
+                            OutputStreamHandler indexWriter,
+                            OutputStreamHandler listIndexWriter) throws IOException
+    {
+        if (couples.isEmpty()) {
             return;
         }
 
-        String term = triplets.get(0).getTerm();
+//        String term = triplets.get(0).getTerm();
+        String term = couples.get(0).getTerm();
+        int curReviewID = couples.get(0).getReviewID();
+        short curFrequency = 0;
+
         LinkedList<Integer> containingReviews = new LinkedList<>();
         LinkedList<Short> containingReviewsFreq = new LinkedList<>();
-        for (TokenTriplet t: triplets) {
-            containingReviews.add(t.getReviewID());
-            containingReviewsFreq.add(t.getFrequency());
+
+        containingReviews.add(curReviewID);
+//        for (TokenTriplet t: couples) {
+        for (TokenCouple t: couples) {
+            if (t.getReviewID() == curReviewID) {
+                curFrequency++;
+            }
+            else {
+//                containingReviewsFreq.add(t.getFrequency());
+                containingReviewsFreq.add(curFrequency);
+                // add new review
+                curReviewID = t.getReviewID();
+                containingReviews.add(t.getReviewID());
+                curFrequency = 1;
+            }
         }
+        containingReviewsFreq.add(curFrequency);
         indexWriter.writeInt(termPointer);
         termPointer += term.length();
         indexWriter.writeLong(listIndexWriter.getFilePointer());
