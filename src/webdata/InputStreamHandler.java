@@ -84,7 +84,8 @@ public class InputStreamHandler {
      //     * @param term term to search.
      * @return
      */
-    public int readAllInstances(List<TokenCouple> allInstances, String term) throws IOException {
+//    public int readAllInstances(List<TokenCouple> allInstances, String term) throws IOException {
+    public int readAllInstances(List<Integer> allInstances, String term, int maxReads) throws IOException {
         int counter = 0;
         if (this.getFilePointer() >= this.length()) {
             return counter;
@@ -94,13 +95,22 @@ public class InputStreamHandler {
         TokenCouple cur = readCouple();
 
         if (!Objects.equals(cur.getTerm(), term)) {
-            this.seek(lastPointer);
+//            this.seek(lastPointer);
             return counter;
         }
 //        String term = cur.getTerm();
         while (Objects.equals(cur.getTerm(), term)) {
-            allInstances.add(cur);
+//            allInstances.add(cur);
             counter++;
+            if (counter > maxReads) {
+                System.out.println("reached max reads"); // debug
+                break;
+            }
+
+            allInstances.add(cur.getReviewID());
+
+//            if (allInstances.size() % 100000 == 0) System.out.println(allInstances.size() + ":: " + term); //debug
+
             if (this.getFilePointer() == this.length()) {
                 return counter;
             }
@@ -110,6 +120,38 @@ public class InputStreamHandler {
         this.seek(lastPointer);
         return counter;
     }
+
+    public List<Integer> readAllInstances(String term, int maxReads) throws IOException {
+        ArrayList<Integer> result = new ArrayList<>();
+        if (this.getFilePointer() >= this.length()) {
+            return result;
+        }
+        long lastPointer = 0;
+//        long lastPointer = getFilePointer();
+        TokenCouple cur = readCouple();
+
+        if (!Objects.equals(cur.getTerm(), term)) {
+            this.seek(lastPointer);
+            return result;
+        }
+//        String term = cur.getTerm();
+        while (Objects.equals(cur.getTerm(), term)) {
+//            allInstances.add(cur);
+            result.add(cur.getReviewID());
+//            counter++;
+
+//            if (allInstances.size() % 100000 == 0) System.out.println(allInstances.size() + ":: " + term); //debug
+
+            if (this.getFilePointer() == this.length()) {
+                return result;
+            }
+            lastPointer = this.getFilePointer();
+            cur = readCouple();
+        }
+        this.seek(lastPointer);
+        return result;
+    }
+
 
     /**
      * @param bufferSize: number of triplets to read
@@ -156,7 +198,7 @@ public class InputStreamHandler {
      * @return a new TokenCouple object.
      * @throws IOException
      */
-    private TokenCouple readCouple() throws IOException{
+    public TokenCouple readCouple() throws IOException{
         int reviewID = readInt();
         String term = readTerm();
         return new TokenCouple(term, reviewID);

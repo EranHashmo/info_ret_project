@@ -102,7 +102,7 @@ public class Dictionary {
     /**
      * Given a token, read the list of reviews containing the token and a list
      * of frequencies of the token in each review
-     * @param token:
+//     * @param token:
      * @param dir: directory where the index is kept.
      * @return ArrayLis of two Array lists:
      *          containingReviews: The first list contains review IDs where the token appears.
@@ -112,30 +112,50 @@ public class Dictionary {
      *              containingReviewsFreq[i] appearances of the given token in it.
      * @throws IOException
      */
-    public ArrayList<ArrayList<Integer>> getContainingReviews(Token token, String dir) throws IOException {
+//    public ArrayList<ArrayList<Integer>> getContainingReviews(Token token, String dir) throws IOException {
+    public ArrayList<Integer> getContainingReviews(String term, String dir) throws IOException {
+
         int lastReadInt = 0;
         int readInt = 0;
         ArrayList<Integer> containingList = new ArrayList<>();
-        ArrayList<Integer> containingListFreq = new ArrayList<>();
+//        ArrayList<Integer> containingListFreq = new ArrayList<>();
 
         File listFile = new File(dir + File.separator + IndexWriter.POSTING_LIST_FILE);
         RandomAccessFile listFileReader = new RandomAccessFile(listFile, "r");
+//        listFileReader.seek(token.getListPointer());
+
+        int tokenPointer = binarySearch(term);
+        if (tokenPointer < 0) {
+            return null;
+        }
+
+        Token token = tokens.get(tokenPointer);
+        long nextPointer;
+        if (tokenPointer == tokens.size() - 1) {
+            nextPointer = listFileReader.length();
+        } else {
+            nextPointer = tokens.get(tokenPointer + 1).getListPointer();
+        }
         listFileReader.seek(token.getListPointer());
 
-        int listSize = Parser.readVInt(listFileReader);
-        for (int i = 0; i < listSize; i++) {
+//        int listSize = Parser.readVInt(listFileReader);
+        while (listFileReader.getFilePointer() != nextPointer) {
+//        for (int i = 0; i < listSize; i++) {
             readInt = Parser.readVInt(listFileReader);
             containingList.add(lastReadInt + readInt);
             lastReadInt = lastReadInt + readInt;
         }
-        for (int i = 0; i < listSize; i++) {
-            containingListFreq.add(Parser.readVInt(listFileReader));
-        }
+//        for (int i = 0; i < listSize; i++) {
+//            containingListFreq.add(Parser.readVInt(listFileReader));
+//        }
+
+
         listFileReader.close();
-        ArrayList<ArrayList<Integer>> pair = new ArrayList<>();
-        pair.add(containingList);
-        pair.add(containingListFreq);
-        return pair;
+//        ArrayList<ArrayList<Integer>> pair = new ArrayList<>();
+//        pair.add(containingList);
+//        pair.add(containingListFreq);
+//        return pair;
+        return containingList;
     }
 
     /**

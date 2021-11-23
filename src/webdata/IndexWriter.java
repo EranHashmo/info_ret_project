@@ -10,10 +10,12 @@ import static java.lang.System.currentTimeMillis;
  * Created by eranhashmo on 5/6/2021.
  */
 public class IndexWriter {
-    private final int REVIEWS_TO_READ =  2500 * 1000;
+    private final int REVIEWS_TO_READ =  1 * 1000 * 1000;
 
-        private final int MAX_REVIEWS_IN_MEM = 2*1000*1000;
-    private final int MAX_TRIPLETS_IN_MEM = 3 * 1000*1000;
+    private final int MAX_REVIEWS_IN_MEM = 3 *1000*1000;
+    private final int MAX_TRIPLETS_IN_MEM = 27 * 1000 * 1000;
+//    private final int MAX_TRIPLETS_IN_MEM = 1000;
+
 
     public static final String REVIEW_DATA_FILE = "review_index";
     public static final String TERM_FILE = "term_String_File";
@@ -82,7 +84,7 @@ public class IndexWriter {
      * dir is the directory in which all index files will be created
      * if the directory does not exist, it should be created
      */
-    public void write(String inputFile, String dir) {
+    public void write(String inputFile, String dir) throws OutOfMemoryError {
         int curReviewID = 0;
         int numTokensInCurrent = 0;
         int numOfTokens = 0;
@@ -150,13 +152,14 @@ public class IndexWriter {
             buildDictionary(dir);
 
         } catch (IOException e) {
-            System.out.println("SlowWriter unable to write");
+            System.out.println("Writer unable to write");
             e.printStackTrace();
-        } catch (OutOfMemoryError e) {
-            System.out.println("managed to read: " + curReviewID);
-            e.printStackTrace();
-
         }
+//        catch (OutOfMemoryError e) {
+//            System.out.println("managed to read: " + curReviewID);
+//            e.printStackTrace();
+//            throw e;
+//        }
     }
 
     /**
@@ -233,6 +236,7 @@ public class IndexWriter {
         for (String t : splitTerms) {
             if (t.length() > 0) {
                 intermediateFileWriter.writeCouple(t, reviewID);
+                numOfTokens++;
             }
         }
         return numOfTokens;
@@ -309,6 +313,7 @@ public class IndexWriter {
             allBuffer = sortFileReader.readCouples(MAX_TRIPLETS_IN_MEM);
 
         }
+        System.out.println("num of tokens externalSortFirst: " + termIDs.size()); // debug
         sortFileReader.close();
         sortFileWriter.close();
 
@@ -349,13 +354,18 @@ public class IndexWriter {
         TreeSet<Integer> activePointers = new TreeSet<>();
         ArrayList<Long> filePointers = new ArrayList<>(blockPointers);
 
-        ArrayList<TokenCouple> allInstances;
+//        ArrayList<Integer> allInstances;
+//        ArrayList<TokenCouple> allInstances;
 //        ArrayList<TokenTriplet> allInstances;
+        System.out.println("block pointers: " + blockPointers.size()); // debug
         int reads;
         int curLength;
         int curTermIndex = 0;
         char[] nextTermArr;
         String nextTerm;
+
+        long nextPointer;
+        int maxReads;
         for (int p = 0; p < blockPointers.size(); p++) {
             activePointers.add(p);
         }
@@ -367,15 +377,77 @@ public class IndexWriter {
                 termReader.read(nextTermArr, 0, curLength);
                 nextTerm = new String(nextTermArr);
                 curTermIndex++;
-//            String nextTerm = termIDs.pollFirst();
+//                allInstances = new ArrayList<>();
 
-                allInstances = new ArrayList<>();
+                indexWriter.writeInt(termPointer);
+                termPointer += nextTerm.length();
+                indexWriter.writeLong(listIndexWriter.getFilePointer());
+
                 for (int p : activePointers) {
                     intermediateFile.seek(filePointers.get(p));
-                    reads = intermediateFile.readAllInstances(allInstances, nextTerm);
+
+                    if (p != blockPointers.size() - 1) {
+                        nextPointer = blockPointers.get(p+1);
+                    } else {
+                        nextPointer = intermediateFile.length();
+                    }
+
+
+                    // ---------------------------------------- readAllInstances -----------------
+                    maxReads = (int)(nextPointer - filePointers.get(p));
+                    reads = 0;
+//                    int counter = 0;
+                    if (intermediateFile.getFilePointer() >= intermediateFile.length()) {
+                        continue;
+                    }
+                    long lastPointer = p;
+//                    long lastPointer = intermediateFile.getFilePointer();
+                    TokenCouple cur = intermediateFile.readCouple();
+
+                    if (!Objects.equals(cur.getTerm(), nextTerm)) {
+//            this.seek(lastPointer);
+                        continue;
+                    }
+
+//        String term = cur.getTerm();
+                    int lastWroteInt = 0;
+
+                    while (Objects.equals(cur.getTerm(), nextTerm)) {
+
+                        int curReviewID = cur.getReviewID();
+//                        short curFrequency = 0;
+//            allInstances.add(cur);
+                        reads++;
+                        if (reads > maxReads) {
+//                            System.out.println("reached max reads"); // debug
+                            break;
+                        }
+
+                        listIndexWriter.writeVInt(curReviewID - lastWroteInt);
+                        lastWroteInt = curReviewID;
+
+//                        allInstances.add(cur.getReviewID());
+
+//                      if (allInstances.size() % 100000 == 0) System.out.println(allInstances.size() + ":: " + term); //debug
+
+                        if (intermediateFile.getFilePointer() == intermediateFile.length()) {
+//                            System.out.println("pointer: " + p + " reached eof"); // debug
+                            lastPointer = intermediateFile.getFilePointer();
+                            break;
+                        }
+                        lastPointer = intermediateFile.getFilePointer();
+                        cur = intermediateFile.readCouple();
+                    }
+//                    intermediateFile.seek(lastPointer);
+//                    reads = intermediateFile.readAllInstances(allInstances, nextTerm, (int)(nextPointer - filePointers.get(p)));
+//              ---------------------------------------- readAllInstances end -----------------
+
+//                    if (reads * 24L >= nextPointer - filePointers.get(p)) {
+//                        System.out.println("instances of:" + nextTerm + " exceed block bounds");
+//                    }
 
                     if (reads != 0) {
-                        filePointers.set(p, intermediateFile.getFilePointer());
+                        filePointers.set(p, lastPointer);
                     }
                 }
                 for (int p = 0; p < blockPointers.size() - 1; p++) {
@@ -386,8 +458,50 @@ public class IndexWriter {
                 if (filePointers.get(filePointers.size() - 1) == intermediateFile.length()) {
                     activePointers.remove(filePointers.size() - 1);
                 }
-//            writeTokens(allInstances, indexWriter, listIndexWriter, termStringWriter);
-                writeTokens(allInstances, indexWriter, listIndexWriter);
+
+                // ----------------- writeTokens -------------------
+//                if (allInstances.isEmpty()) {
+//                    return;
+//                }
+
+//                int curReviewID = allInstances.get(0);
+//                short curFrequency = 0;
+//                LinkedList<Integer> containingReviews = new LinkedList<>();
+//                LinkedList<Short> containingReviewsFreq = new LinkedList<>();
+
+//                containingReviews.add(curReviewID);
+//                for (Integer t: allInstances) {
+//                    if (t == curReviewID) {
+//                        curFrequency++;
+//                    }
+//                    else {
+//                        containingReviewsFreq.add(curFrequency);
+//                        // add new review
+//                        curReviewID = t;
+//                        containingReviews.add(t);
+//                        curFrequency = 1;
+//                    }
+//                }
+//                containingReviewsFreq.add(curFrequency);
+
+//                indexWriter.writeInt(termPointer);
+//                termPointer += nextTerm.length();
+//                indexWriter.writeLong(listIndexWriter.getFilePointer());
+
+                // -------------- writeContainingReviews ------------------------------
+//                int lastWroteInt = 0;
+//                listIndexWriter.writeVInt(containingReviews.size()); TODO do not read size, read distance to next pointer instead
+//                for (int rId : containingReviews) {//
+//                    listIndexWriter.writeVInt(rId - lastWroteInt);
+//                    lastWroteInt = rId;
+//                }
+//                for (int rf : containingReviewsFreq) {
+//                    listIndexWriter.writeVInt(rf);
+//                }
+//                writeContainingReviews(containingReviews, containingReviewsFreq, listIndexWriter);
+                // -------------------- writeContainingReviews end ----------------------
+//                writeTokens(allInstances, indexWriter, listIndexWriter, nextTerm);
+                // ------------------ writeTokens end ----------------------
 
             }
         } catch (OutOfMemoryError e) {
@@ -403,7 +517,7 @@ public class IndexWriter {
 
     /**
      * Write complete dictionary token values into the index files from a list of triplets.
-     * @param couples: list of TokenTriplets contains all triplets corresponding to a single term
+     * @param reviewIDs: list of TokenTriplets contains all triplets corresponding to a single term
 //     * @param indexWriter
      * @param listIndexWriter
 //     * @param termStringWriter
@@ -414,34 +528,33 @@ public class IndexWriter {
 //    public void writeTokens(List<TokenTriplet> triplets,
 //                           OutputStreamHandler indexWriter,
 //                           OutputStreamHandler listIndexWriter) throws IOException{
-    public void writeTokens(List<TokenCouple> couples,
+//    public void writeTokens(List<TokenCouple> couples,
+//                            OutputStreamHandler indexWriter,
+//                            OutputStreamHandler listIndexWriter) throws IOException
+    public void writeTokens(List<Integer> reviewIDs,
                             OutputStreamHandler indexWriter,
-                            OutputStreamHandler listIndexWriter) throws IOException
+                            OutputStreamHandler listIndexWriter, String term) throws IOException
     {
-        if (couples.isEmpty()) {
+        if (reviewIDs.isEmpty()) {
             return;
         }
 
-//        String term = triplets.get(0).getTerm();
-        String term = couples.get(0).getTerm();
-        int curReviewID = couples.get(0).getReviewID();
+        int curReviewID = reviewIDs.get(0);
         short curFrequency = 0;
 
         LinkedList<Integer> containingReviews = new LinkedList<>();
         LinkedList<Short> containingReviewsFreq = new LinkedList<>();
 
         containingReviews.add(curReviewID);
-//        for (TokenTriplet t: couples) {
-        for (TokenCouple t: couples) {
-            if (t.getReviewID() == curReviewID) {
+        for (Integer t: reviewIDs) {
+            if (t == curReviewID) {
                 curFrequency++;
             }
             else {
-//                containingReviewsFreq.add(t.getFrequency());
                 containingReviewsFreq.add(curFrequency);
                 // add new review
-                curReviewID = t.getReviewID();
-                containingReviews.add(t.getReviewID());
+                curReviewID = t;
+                containingReviews.add(t);
                 curFrequency = 1;
             }
         }
@@ -451,7 +564,6 @@ public class IndexWriter {
         indexWriter.writeLong(listIndexWriter.getFilePointer());
         writeContainingReviews(containingReviews, containingReviewsFreq, listIndexWriter);
 
-//        termStringWriter.write(term);
     }
 
 
