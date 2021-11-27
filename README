@@ -1,3 +1,10 @@
-eranhashmo
+Title: Simple Search Engine
 
-eran chashmonay - ID 308281435
+Author: EranHashmo
+
+Description:
+This project is part of the Information Retrieval course in The Hebrew University of Jerusalem.
+It is a relatively simple search engine for reviews supplied by the Stanford Large Network Dataset Collection (http://snap.stanford.edu/data/index.html).
+
+Note that this project is currently not working well and I will be fixing and tweaking it during the following months.
+
