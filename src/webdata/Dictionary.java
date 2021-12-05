@@ -12,9 +12,6 @@ import java.util.*;
  * Assumes there is enough data in main memory to store entire dictionary before compressing it.
  */
 public class Dictionary {
-    static final int CONTAINED_LIST = 0;
-    static final int CONTAINED_FREQ = 1;
-
     private int numOfReviews;
     private int numOfTokens;
     private ArrayList<Token> tokens;
@@ -47,26 +44,6 @@ public class Dictionary {
         Path termString = Paths.get(dir + File.separator + IndexWriter.TERM_FILE);
         wordString = new String(Files.readAllBytes(termString));
     }
-
-
-//    /**
-//     * Return pointer to the position in the indexFile where the review is at According to reviewID.
-//     * @param reviewID: ID of the review to look for.
-//     * @return position in the index file where the review is at.
-//     */
-//    public long getReviewPointer(int reviewID, String workDir) throws IOException {
-//        int longSizeBytes = 8;
-//        if (reviewID > numOfReviews) {
-//            return -1;
-//        }
-//        File reviewPtrFile = new File(workDir +
-//                File.separator + IndexWriter.DICT_REVIEW_PTRS);
-//        RandomAccessFile reviewPointersReader = new RandomAccessFile(reviewPtrFile, "r");
-//        reviewPointersReader.seek((reviewID - 1) * longSizeBytes);
-//        long reviewPointer = reviewPointersReader.readLong();
-//        reviewPointersReader.close();
-//        return reviewPointer;
-//    }
 
     /**
      *
@@ -112,17 +89,13 @@ public class Dictionary {
      *              containingReviewsFreq[i] appearances of the given token in it.
      * @throws IOException
      */
-//    public ArrayList<ArrayList<Integer>> getContainingReviews(Token token, String dir) throws IOException {
     public ArrayList<Integer> getContainingReviews(String term, String dir) throws IOException {
-
         int lastReadInt = 0;
         int readInt = 0;
         ArrayList<Integer> containingList = new ArrayList<>();
-//        ArrayList<Integer> containingListFreq = new ArrayList<>();
 
         File listFile = new File(dir + File.separator + IndexWriter.POSTING_LIST_FILE);
         RandomAccessFile listFileReader = new RandomAccessFile(listFile, "r");
-//        listFileReader.seek(token.getListPointer());
 
         int tokenPointer = binarySearch(term);
         if (tokenPointer < 0) {
@@ -138,9 +111,7 @@ public class Dictionary {
         }
         listFileReader.seek(token.getListPointer());
 
-//        int listSize = Parser.readVInt(listFileReader);
         while (listFileReader.getFilePointer() != nextPointer) {
-//        for (int i = 0; i < listSize; i++) {
             readInt = Parser.readVInt(listFileReader);
             if (readInt == 0) {
                 containingList.add(lastReadInt + readInt);
@@ -150,17 +121,7 @@ public class Dictionary {
                 lastReadInt = lastReadInt + readInt;
             }
         }
-
-//        for (int i = 0; i < listSize; i++) {
-//            containingListFreq.add(Parser.readVInt(listFileReader));
-//        }
-
-
         listFileReader.close();
-//        ArrayList<ArrayList<Integer>> pair = new ArrayList<>();
-//        pair.add(containingList);
-//        pair.add(containingListFreq);
-//        return pair;
         return containingList;
     }
 
@@ -242,4 +203,3 @@ public class Dictionary {
         reviewFile.close();
     }
 }
-

@@ -30,10 +30,6 @@ public class IndexReader {
             return null;
         }
         try {
-//            long reviewPtr = dictionary.getReviewPointer(reviewId, workDir);
-//            if (reviewPtr < 0) {
-//                return null;
-//            }
             long reviewPtr = (2*Integer.BYTES) + (reviewId - 1) * (RawDataParser.PID_LENGTH + 4*Integer.BYTES);
             review = parser.readReview(reviewPtr);
         } catch (IOException e) {
@@ -125,17 +121,6 @@ public class IndexReader {
     public int getTokenFrequency(String token) {
         int counter = 1;
         try {
-//            Token foundToken = dictionary.getToken(token);
-//            if (foundToken == null) {
-//                return 0;
-//            }
-//            ArrayList<Integer> containingReviews =
-//                    dictionary.getContainingReviews(foundToken, workDir).
-//                            get(Dictionary.CONTAINED_LIST);
-//            if (containingReviews == null) {
-//                return 0;
-//            }
-//            return containingReviews.size();
             ArrayList<Integer> reviewIDs = dictionary.getContainingReviews(token, workDir);
             if (reviewIDs == null) {
                 return 0;
@@ -160,26 +145,12 @@ public class IndexReader {
      * Returns 0 if there are no reviews containing this token
      */
     public int getTokenCollectionFrequency(String token) {
-//        int counter = 0;
         ArrayList<Integer> containingReviews = new ArrayList<>();
         try {
-//            Token foundToken = dictionary.getToken(token);
-//            if (foundToken == null) {
-//                return 0;
-//            }
             containingReviews = dictionary.getContainingReviews(token, workDir);
             if (containingReviews == null) {
                 return 0;
             }
-//            ArrayList<Integer> containingReviewsFreq =
-//                    dictionary.getContainingReviews(foundToken, workDir).
-//                            get(Dictionary.CONTAINED_FREQ);
-//            if (containingReviewsFreq == null) {
-//                return 0;
-//            }
-//            for (int f : containingReviewsFreq) {
-//                counter += f;
-//            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -198,10 +169,6 @@ public class IndexReader {
      */
     public Enumeration<Integer> getReviewsWithToken(String token) {
         ArrayList<Integer> reviewsWithTokens = new ArrayList<>();
-//        Token foundToken = getTokenFromDict(token);
-//        if (foundToken == null) {
-//            return Collections.enumeration(reviewsWithTokens);
-//        }
         try {
             ArrayList<Integer> reviewIDs = dictionary.getContainingReviews(token, workDir);
             if (reviewIDs == null) {
@@ -225,16 +192,6 @@ public class IndexReader {
                 }
             }
             reviewsWithTokens.add(curFrequency);
-//            ArrayList<ArrayList<Integer>> reviewList =
-//                    dictionary.getContainingReviews(foundToken, workDir);
-//            ArrayList<Integer> containingReviews = reviewList.get(Dictionary.CONTAINED_LIST);
-//            ArrayList<Integer> frequencyList = reviewList.get(Dictionary.CONTAINED_FREQ);
-//            if (containingReviews != null && frequencyList != null) {
-//                for (int i = 0; i < containingReviews.size(); i++) {
-//                    reviewsWithTokens.add(containingReviews.get(i));
-//                    reviewsWithTokens.add(frequencyList.get(i));
-//                }
-//            }
         } catch (IOException e) {
             e.printStackTrace();
         }

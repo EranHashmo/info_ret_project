@@ -15,15 +15,14 @@ public class IndexWriter {
     private final int MAX_REVIEWS_IN_MEM = 3 *1000*1000;
 //    private final int MAX_REVIEWS_IN_MEM = 2;
 
-//    private final int MAX_COUPLES_IN_MEM = 27 * 1000 * 1000;
-    private final int MAX_COUPLES_IN_MEM = 1000;
+    private final int MAX_COUPLES_IN_MEM = 27 * 1000 * 1000;
+//    private final int MAX_COUPLES_IN_MEM = 1000;
 //    private final int MAX_COUPLES_IN_MEM = 2;
 
     public static final String REVIEW_DATA_FILE = "review_index";
     public static final String TERM_FILE = "term_String_File";
     public static final String DICT_REVIEW_PIDS = "dict_review_PIDs";
     public static final String TOKEN_MAP = "dict_index";
-
     public static final String POSTING_LIST_FILE = "posting_lists";
 
     public static final String INTERMEDIATE_TOKEN_FILE = "intermediate_token_file";
@@ -279,16 +278,13 @@ public class IndexWriter {
     private void externalSortSecond(ArrayList<Long> blockPointers, String dir) throws IOException
     {
 //        System.out.println("------------------ externalSortSecond start --------------");
-
         InputStreamHandler intermediateFile = new InputStreamHandler(dir + File.separator + INTERMEDIATE_TOKEN_FILE2);
         OutputStreamHandler indexWriter = new OutputStreamHandler(dir + File.separator + TOKEN_MAP);
         OutputStreamHandler listIndexWriter = new OutputStreamHandler(dir + File.separator + POSTING_LIST_FILE);
-
         BufferedReader termReader = new BufferedReader(new FileReader (dir + File.separator + TERM_FILE));
 
         TreeSet<Integer> activePointers = new TreeSet<>();
         ArrayList<Long> filePointers = new ArrayList<>(blockPointers);
-
         System.out.println("block pointers: " + blockPointers.size()); // debug
         int reads;
         int curLength;
@@ -297,7 +293,6 @@ public class IndexWriter {
         String nextTerm;
 
         long nextPointer;
-        int maxReads;
         int curReviewID = 0;
         int lastWroteInt = 0;
         for (int p = 0; p < blockPointers.size(); p++) {
@@ -314,7 +309,7 @@ public class IndexWriter {
 
                 indexWriter.writeInt(termPointer);
                 termPointer += nextTerm.length();
-                indexWriter.writeLong(listIndexWriter.getFilePointer()); //TODO: last pointer is end of file, should not be printed
+                indexWriter.writeLong(listIndexWriter.getFilePointer());
 
                 lastWroteInt = 0;
 
@@ -328,8 +323,6 @@ public class IndexWriter {
                     }
 
                     // ---------------------------------------- readAllInstances -----------------
-//                    maxReads = (int)(nextPointer - filePointers.get(p)); //TODO: should I be counting bytes?
-
                     reads = 0;
                     if (intermediateFile.getFilePointer() >= intermediateFile.length()) {
                         continue;
@@ -340,14 +333,9 @@ public class IndexWriter {
                     if (!Objects.equals(cur.getTerm(), nextTerm)) {
                         continue;
                     }
-
                     while (Objects.equals(cur.getTerm(), nextTerm)) {
-
                         curReviewID = cur.getReviewID();
                         reads++;
-//                        if (reads > maxReads) {
-//                            break;
-//                        }
 
                         listIndexWriter.writeVInt(curReviewID - lastWroteInt);
                         lastWroteInt = curReviewID;
@@ -358,18 +346,11 @@ public class IndexWriter {
                         }
                         lastPointer = intermediateFile.getFilePointer();
 
-                        // ---
                         if (intermediateFile.getFilePointer() >= nextPointer) {
                             break;
                         }
-                        // ---
                         cur = intermediateFile.readCouple();
                     }
-//              ---------------------------------------- readAllInstances end -----------------
-
-//                    if (reads * 24L >= nextPointer - filePointers.get(p)) {
-//                        System.out.println("instances of:" + nextTerm + " exceed block bounds");
-//                    }
 
                     if (reads != 0) {
                         filePointers.set(p, lastPointer);
@@ -383,11 +364,6 @@ public class IndexWriter {
                 if (filePointers.get(filePointers.size() - 1) == intermediateFile.length()) {
                     activePointers.remove(filePointers.size() - 1);
                 }
-
-                // ----------------- writeTokens -------------------
-//                writeTokens(allInstances, indexWriter, listIndexWriter, nextTerm);
-                // ------------------ writeTokens end ----------------------
-
             }
         } catch (OutOfMemoryError e) {
             e.printStackTrace();

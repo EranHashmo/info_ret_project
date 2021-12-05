@@ -14,8 +14,8 @@ import static java.lang.System.exit;
 public class Tests {
     public static String indexDir = "indexDir";
 //    public static String inputFile = "tiny_data.txt";
-    public static String inputFile = "1000.txt";
-//    public static String inputFile = "movies.txt.gz";
+//    public static String inputFile = "1000.txt";
+    public static String inputFile = "movies.txt.gz";
 
     static final String OUTPUT = "sandboxOut.txt";
     static final int TINY_DATA_SIZE = 6;
