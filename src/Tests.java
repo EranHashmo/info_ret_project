@@ -13,8 +13,9 @@ import static java.lang.System.exit;
 
 public class Tests {
     public static String indexDir = "indexDir";
-//    public static String inputFile = "1000.txt";
-    public static String inputFile = "movies.txt.gz";
+//    public static String inputFile = "tiny_data.txt";
+    public static String inputFile = "1000.txt";
+//    public static String inputFile = "movies.txt.gz";
 
     static final String OUTPUT = "sandboxOut.txt";
     static final int TINY_DATA_SIZE = 6;
@@ -59,55 +60,56 @@ public class Tests {
         testReviews.put(1, new Review("B001E4KFG0", 1, 1, 5, 48));
         testReviews.put(500, new Review("B000G6RYNE", 0, 0, 5, 73));
         testReviews.put(1000, new Review("B006F2NYI2", 2, 5, 2, 102));
-//        testReviews.put(2, new Review("B00813GRG4", 0, 0, 1, 32));
-//        testReviews.put(999, new Review("B006F2NYI2", 1, 2, 1, 57));
+        testReviews.put(2, new Review("B00813GRG4", 0, 0, 1, 32));
+        testReviews.put(999, new Review("B006F2NYI2", 1, 2, 1, 57));
 
         System.out.println("num of reviews: " + ir.getNumberOfReviews());
-//        for (int reviewID : testReviews.keySet()) {
-//            System.out.println("-------- review " + reviewID + "------------");
-//            System.out.println(
-//                    "product id = " + ir.getProductId(reviewID)
-//                            + " || should be: " + testReviews.get(reviewID).getProductID());
-//            System.out.println(
-//                    "score of review = " + ir.getReviewScore(reviewID)
-//                            + " || should be: " + testReviews.get(reviewID).getScore());
-//            System.out.println(
-//                    "helpfulness1 = " + ir.getReviewHelpfulnessNumerator(reviewID)
-//                            + " || should be: " + testReviews.get(reviewID).getHelpfulness1());
-//            System.out.println(
-//                    "helpfulness2 = " + ir.getReviewHelpfulnessDenominator(reviewID)
-//                            + " || should be: " + testReviews.get(reviewID).getHelpfulness2());
-//            System.out.println(
-//                    "num of tokens = " + ir.getReviewLength(reviewID)
-//                            + " || should be: " + testReviews.get(reviewID).getNumOfTokens());
-//            System.out.println("-------- review " + reviewID + " end ------------");
-//        }
+        for (int reviewID : testReviews.keySet()) {
+            System.out.println("-------- review " + reviewID + "------------");
+            System.out.println(
+                    "product id = " + ir.getProductId(reviewID)
+                            + " || should be: " + testReviews.get(reviewID).getProductID());
+            System.out.println(
+                    "score of review = " + ir.getReviewScore(reviewID)
+                            + " || should be: " + testReviews.get(reviewID).getScore());
+            System.out.println(
+                    "helpfulness1 = " + ir.getReviewHelpfulnessNumerator(reviewID)
+                            + " || should be: " + testReviews.get(reviewID).getHelpfulness1());
+            System.out.println(
+                    "helpfulness2 = " + ir.getReviewHelpfulnessDenominator(reviewID)
+                            + " || should be: " + testReviews.get(reviewID).getHelpfulness2());
+            System.out.println(
+                    "num of tokens = " + ir.getReviewLength(reviewID)
+                            + " || should be: " + testReviews.get(reviewID).getNumOfTokens());
+            System.out.println("-------- review " + reviewID + " end ------------");
+        }
 
         testTokens = new HashMap<>();
+//        testTokens.put("aa", new int[]{2, 3});
         testTokens.put("it", new int[]{591, 1504});
-//        testTokens.put("allergy", new int[]{5, 6});
-//        testTokens.put("chicken", new int[]{23, 30});
-//        testTokens.put("of", new int[]{589, 1335});
+        testTokens.put("allergy", new int[]{5, 6});
+        testTokens.put("chicken", new int[]{23, 30});
+        testTokens.put("of", new int[]{589, 1335});
 
         System.out.println("num of tokens: " + ir.getTokenSizeOfReviews());
         for (String token: testTokens.keySet()) {
             System.out.println("------ token " + token + "-----");
-            System.out.println("getTokenFrequency: " + ir.getTokenFrequency(token) ); //+ " || should be: " + testTokens.get(token)[0]);
-            System.out.println("getTokenCollectionFrequency " + ir.getTokenCollectionFrequency(token) ); //+ " || should be: " + testTokens.get(token)[1]);
+            System.out.println("getTokenFrequency: " + ir.getTokenFrequency(token) + " || should be: " + testTokens.get(token)[0]);
+            System.out.println("getTokenCollectionFrequency " + ir.getTokenCollectionFrequency(token) + " || should be: " + testTokens.get(token)[1]);
 
             long start = currentTimeMillis();
             ir.getReviewsWithToken(token);
             long end = currentTimeMillis();
             System.out.println("getReviewsWithToken: " + token + ", time: " + (end - start));
 
-//            getReviewsWithToken(ir, token);
+            getReviewsWithToken(ir, token);
             System.out.println("------ token " + token + " end -----");
         }
     }
 
     private static void getReviewsWithToken(IndexReader ir, String token) {
         Enumeration e;
-        System.out.println("getReviewsWithToken: " + token); // problem
+//        System.out.println("getReviewsWithToken: " + token); // problem
         e = ir.getReviewsWithToken(token);
         File termResults = new File("getReviewsWithToken_TEST_" + token);
         try {

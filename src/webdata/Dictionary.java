@@ -142,9 +142,15 @@ public class Dictionary {
         while (listFileReader.getFilePointer() != nextPointer) {
 //        for (int i = 0; i < listSize; i++) {
             readInt = Parser.readVInt(listFileReader);
-            containingList.add(lastReadInt + readInt);
-            lastReadInt = lastReadInt + readInt;
+            if (readInt == 0) {
+                containingList.add(lastReadInt + readInt);
+            }
+            else {
+                containingList.add(lastReadInt + readInt);
+                lastReadInt = lastReadInt + readInt;
+            }
         }
+
 //        for (int i = 0; i < listSize; i++) {
 //            containingListFreq.add(Parser.readVInt(listFileReader));
 //        }
