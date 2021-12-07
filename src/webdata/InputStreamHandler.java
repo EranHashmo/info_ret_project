@@ -5,6 +5,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Scanner;
 
 public class InputStreamHandler {
     private RandomAccessFile reader;
@@ -126,14 +127,10 @@ public class InputStreamHandler {
      */
     public ArrayList<TokenCouple> readCouples(int bufferSize)
             throws IOException{
-        int bufferCheck = 0;
-
         ArrayList<TokenCouple> couples = new ArrayList<>(bufferSize);
-        while (bufferCheck < bufferSize && this.getFilePointer() < this.length()) {
-//            if (bufferCheck == 52934) System.out.println("here");     // debug
+        while (couples.size() < bufferSize && this.getFilePointer() < this.length()) {
             TokenCouple tc = readCouple();
             couples.add(tc);
-            bufferCheck ++;
         }
         return couples;
     }
@@ -149,6 +146,7 @@ public class InputStreamHandler {
         String term = readTerm();
         return new TokenCouple(term, reviewID);
     }
+
 
     /**
      * Helper method for readTriplets

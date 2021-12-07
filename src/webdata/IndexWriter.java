@@ -4,15 +4,16 @@ import java.io.*;
 import java.util.*;
 
 import static java.lang.System.currentTimeMillis;
-//import matplotlib.pyplot as plt
 
 /**
  * Created by eranhashmo on 5/6/2021.
  */
 public class IndexWriter {
-    private final int REVIEWS_TO_READ =  1 * 1000 * 1000;
+    private final int REVIEWS_TO_READ =   1000 * 1000;
+//    private final int REVIEWS_TO_READ =   1000;
 
     private final int MAX_REVIEWS_IN_MEM = 3 *1000*1000;
+//    private final int MAX_REVIEWS_IN_MEM = 1000;
 //    private final int MAX_REVIEWS_IN_MEM = 2;
 
     private final int MAX_COUPLES_IN_MEM = 27 * 1000 * 1000;
@@ -29,7 +30,7 @@ public class IndexWriter {
     public static final String INTERMEDIATE_TOKEN_FILE2 = "intermediate_token_file2";
     public static final String INTERMEDIATE_SEPARATOR = "$";
 
-    private int termPointer;
+//    private int termPointer;
     private int[] termLengths;
 
     public IndexWriter() {
@@ -56,7 +57,6 @@ public class IndexWriter {
         ArrayList<File> fileList = new ArrayList<>();
         fileList.add(new File(dir + File.separator + REVIEW_DATA_FILE));
         fileList.add(new File(dir + File.separator + TERM_FILE));
-//        fileList.add(new File(dir + File.separator + DICT_REVIEW_PTRS));
         fileList.add(new File(dir + File.separator + DICT_REVIEW_PIDS));
         fileList.add(new File(dir + File.separator + TOKEN_MAP));
         fileList.add(new File(dir + File.separator + POSTING_LIST_FILE));
@@ -110,16 +110,13 @@ public class IndexWriter {
 
                     reviewPIDWriter.writeString(rr.getProductID());
                     reviewDataWriter.writeString(rr.getProductID());
-
                     reviewDataWriter.writeInt(rr.getHelpfulness1());
                     reviewDataWriter.writeInt(rr.getHelpfulness2());
                     reviewDataWriter.writeInt(rr.getScore());
 
                     numTokensInCurrent = getTokenCouples(rr.getText(), curReviewID, intermediateFileWriter);
-
                     reviewDataWriter.writeInt(numTokensInCurrent);
                     numOfTokens += numTokensInCurrent;
-
                     if (curReviewID >= REVIEWS_TO_READ) {
                         break;
                     }
@@ -129,7 +126,6 @@ public class IndexWriter {
             end = currentTimeMillis();
             System.out.println("read reviews time: " + (end - start));
 
-//            reviewPointersWriter.close();
             reviewPIDWriter.close();
             rawParser.close();
 
@@ -206,7 +202,7 @@ public class IndexWriter {
      * @throws IOException
      */
     private void buildDictionary(String dir) throws IOException{
-        termPointer = 0;
+//        termPointer = 0;
 
         long start = currentTimeMillis();
         ArrayList<Long> filePointers = externalSortFirst(dir);
@@ -241,7 +237,6 @@ public class IndexWriter {
 
         while (!allBuffer.isEmpty()) {
             filePointers.add(leftFilePointer);
-            sortFileWriter.seek(leftFilePointer);
             Collections.sort(allBuffer);
             for (TokenCouple t: allBuffer) {
                 sortFileWriter.writeCouple(t.getTerm(), t.getReviewID());
@@ -249,12 +244,17 @@ public class IndexWriter {
             }
             leftFilePointer = sortFileWriter.getFilePointer();
             allBuffer = sortFileReader.readCouples(MAX_COUPLES_IN_MEM);
-
         }
         System.out.println("num of tokens externalSortFirst: " + termIDs.size()); // debug
         sortFileReader.close();
         sortFileWriter.close();
 
+        setTermLengths(dir, termIDs);
+
+        return filePointers;
+    }
+
+    private void setTermLengths(String dir, TreeSet<String> termIDs) throws IOException {
         OutputStreamHandler termStringWriter = new OutputStreamHandler(dir + File.separator + TERM_FILE);
         int termIndex = 0;
         termLengths = new int[termIDs.size()];
@@ -264,8 +264,6 @@ public class IndexWriter {
             termStringWriter.writeString(s);
         }
         termStringWriter.close();
-
-        return filePointers;
     }
 
     /**
@@ -286,15 +284,15 @@ public class IndexWriter {
         TreeSet<Integer> activePointers = new TreeSet<>();
         ArrayList<Long> filePointers = new ArrayList<>(blockPointers);
         System.out.println("block pointers: " + blockPointers.size()); // debug
-        int reads;
+        int writeTermPointer = 0;
         int curLength;
         int curTermIndex = 0;
         char[] nextTermArr;
         String nextTerm;
-
         long nextPointer;
         int curReviewID = 0;
         int lastWroteInt = 0;
+
         for (int p = 0; p < blockPointers.size(); p++) {
             activePointers.add(p);
         }
@@ -307,8 +305,8 @@ public class IndexWriter {
                 nextTerm = new String(nextTermArr);
                 curTermIndex++;
 
-                indexWriter.writeInt(termPointer);
-                termPointer += nextTerm.length();
+                indexWriter.writeInt(writeTermPointer);
+                writeTermPointer += nextTerm.length();
                 indexWriter.writeLong(listIndexWriter.getFilePointer());
 
                 lastWroteInt = 0;
@@ -323,7 +321,6 @@ public class IndexWriter {
                     }
 
                     // ---------------------------------------- readAllInstances -----------------
-                    reads = 0;
                     if (intermediateFile.getFilePointer() >= intermediateFile.length()) {
                         continue;
                     }
@@ -335,26 +332,25 @@ public class IndexWriter {
                     }
                     while (Objects.equals(cur.getTerm(), nextTerm)) {
                         curReviewID = cur.getReviewID();
-                        reads++;
 
                         listIndexWriter.writeVInt(curReviewID - lastWroteInt);
                         lastWroteInt = curReviewID;
 
-                        if (intermediateFile.getFilePointer() == intermediateFile.length()) {
-                            lastPointer = intermediateFile.getFilePointer();
-                            break;
-                        }
                         lastPointer = intermediateFile.getFilePointer();
+
+//                        if (intermediateFile.getFilePointer() == intermediateFile.length()) {
+//                            lastPointer = intermediateFile.getFilePointer();
+//                            break;
+//                        }
+//                        lastPointer = intermediateFile.getFilePointer();
 
                         if (intermediateFile.getFilePointer() >= nextPointer) {
                             break;
                         }
+
                         cur = intermediateFile.readCouple();
                     }
-
-                    if (reads != 0) {
-                        filePointers.set(p, lastPointer);
-                    }
+                    filePointers.set(p, lastPointer);
                 }
                 for (int p = 0; p < blockPointers.size() - 1; p++) {
                     if (filePointers.get(p) >= blockPointers.get(p + 1)) {
@@ -373,77 +369,5 @@ public class IndexWriter {
             listIndexWriter.close();
             termReader.close();
         }
-    }
-
-    /**
-     * Write complete dictionary token values into the index files from a list of triplets.
-     * @param reviewIDs: list of TokenTriplets contains all triplets corresponding to a single term
-//     * @param indexWriter
-     * @param listIndexWriter
-//     * @param termStringWriter
-     * @return
-     * @throws IOException
-     */
-    public void writeTokens(List<Integer> reviewIDs,
-                            OutputStreamHandler indexWriter,
-                            OutputStreamHandler listIndexWriter, String term) throws IOException
-    {
-        if (reviewIDs.isEmpty()) {
-            return;
-        }
-
-        int curReviewID = reviewIDs.get(0);
-        short curFrequency = 0;
-
-        LinkedList<Integer> containingReviews = new LinkedList<>();
-        LinkedList<Short> containingReviewsFreq = new LinkedList<>();
-
-        containingReviews.add(curReviewID);
-        for (Integer t: reviewIDs) {
-            if (t == curReviewID) {
-                curFrequency++;
-            }
-            else {
-                containingReviewsFreq.add(curFrequency);
-                // add new review
-                curReviewID = t;
-                containingReviews.add(t);
-                curFrequency = 1;
-            }
-        }
-        containingReviewsFreq.add(curFrequency);
-        indexWriter.writeInt(termPointer);
-        termPointer += term.length();
-        indexWriter.writeLong(listIndexWriter.getFilePointer());
-        writeContainingReviews(containingReviews, containingReviewsFreq, listIndexWriter);
-    }
-
-
-    /**
-     * Write posting lists of a single token.
-     * For a specific token, write the token's containing reviews list and the list of frequencies
-     *  in the reviews into the index file.
-     * @param containingReviews: list of reviewIDs of reviews that contain the token.
-     * @param containingReviewsFreq: for each reviewID i in containingReviews the i'th element of
-     *                             containingReviewsFreq contains the number of times the token appeared in
-     *                             the i'th review.
-     * @param listIndexWriter: file where the posting lists are saved into.
-     * @return the total number of appearances of the token.
-     * @throws IOException
-     */
-    private int writeContainingReviews(List<Integer> containingReviews, List<Short> containingReviewsFreq,
-                                       OutputStreamHandler listIndexWriter) throws IOException{
-        int numOfTokens = 0;
-        int lastWroteInt = 0;
-        listIndexWriter.writeVInt(containingReviews.size());
-        for (int rId : containingReviews) {
-            listIndexWriter.writeVInt(rId - lastWroteInt);
-            lastWroteInt = rId;
-        }
-        for (int rf : containingReviewsFreq) {
-            listIndexWriter.writeVInt(rf);
-            numOfTokens += rf;
-        }
-        return numOfTokens;
     }
 }

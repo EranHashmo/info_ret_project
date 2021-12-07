@@ -67,19 +67,19 @@ public class Tests {
         for (int reviewID : testReviews.keySet()) {
             System.out.println("-------- review " + reviewID + "------------");
             System.out.println(
-                    "product id = " + ir.getProductId(reviewID)
+                    "product id = " + ir.getProductId(reviewID) //);
                             + " || should be: " + testReviews.get(reviewID).getProductID());
             System.out.println(
-                    "score of review = " + ir.getReviewScore(reviewID)
+                    "score of review = " + ir.getReviewScore(reviewID) //);
                             + " || should be: " + testReviews.get(reviewID).getScore());
             System.out.println(
-                    "helpfulness1 = " + ir.getReviewHelpfulnessNumerator(reviewID)
+                    "helpfulness1 = " + ir.getReviewHelpfulnessNumerator(reviewID) //);
                             + " || should be: " + testReviews.get(reviewID).getHelpfulness1());
             System.out.println(
-                    "helpfulness2 = " + ir.getReviewHelpfulnessDenominator(reviewID)
+                    "helpfulness2 = " + ir.getReviewHelpfulnessDenominator(reviewID) //);
                             + " || should be: " + testReviews.get(reviewID).getHelpfulness2());
             System.out.println(
-                    "num of tokens = " + ir.getReviewLength(reviewID)
+                    "num of tokens = " + ir.getReviewLength(reviewID)  //);
                             + " || should be: " + testReviews.get(reviewID).getNumOfTokens());
             System.out.println("-------- review " + reviewID + " end ------------");
         }
@@ -94,8 +94,10 @@ public class Tests {
         System.out.println("num of tokens: " + ir.getTokenSizeOfReviews());
         for (String token: testTokens.keySet()) {
             System.out.println("------ token " + token + "-----");
-            System.out.println("getTokenFrequency: " + ir.getTokenFrequency(token) + " || should be: " + testTokens.get(token)[0]);
-            System.out.println("getTokenCollectionFrequency " + ir.getTokenCollectionFrequency(token) + " || should be: " + testTokens.get(token)[1]);
+            System.out.println("getTokenFrequency: " + ir.getTokenFrequency(token)
+                    + " || should be: " + testTokens.get(token)[0]);
+            System.out.println("getTokenCollectionFrequency " + ir.getTokenCollectionFrequency(token)
+                    + " || should be: " + testTokens.get(token)[1]);
 
             long start = currentTimeMillis();
             ir.getReviewsWithToken(token);
