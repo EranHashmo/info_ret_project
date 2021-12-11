@@ -4,13 +4,16 @@ import webdata.Parser;
 import webdata.Review;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 
 import static java.lang.System.currentTimeMillis;
+import static java.lang.System.exit;
 
 public class Tests {
     public static String indexDir = "indexDir";
+//    public static String inputFile = "tiny_data.txt";
 //    public static String inputFile = "1000.txt";
     public static String inputFile = "movies.txt.gz";
 
@@ -32,7 +35,7 @@ public class Tests {
         System.out.println(count);
     }
 
-    public static void buildIndex()
+    public static void buildIndex() throws OutOfMemoryError
     {
         long start = 0, end = 0;
         IndexWriter iw = new IndexWriter();
@@ -64,24 +67,25 @@ public class Tests {
         for (int reviewID : testReviews.keySet()) {
             System.out.println("-------- review " + reviewID + "------------");
             System.out.println(
-                    "product id = " + ir.getProductId(reviewID)
+                    "product id = " + ir.getProductId(reviewID) //);
                             + " || should be: " + testReviews.get(reviewID).getProductID());
             System.out.println(
-                    "score of review = " + ir.getReviewScore(reviewID)
+                    "score of review = " + ir.getReviewScore(reviewID) //);
                             + " || should be: " + testReviews.get(reviewID).getScore());
             System.out.println(
-                    "helpfulness1 = " + ir.getReviewHelpfulnessNumerator(reviewID)
+                    "helpfulness1 = " + ir.getReviewHelpfulnessNumerator(reviewID) //);
                             + " || should be: " + testReviews.get(reviewID).getHelpfulness1());
             System.out.println(
-                    "helpfulness2 = " + ir.getReviewHelpfulnessDenominator(reviewID)
+                    "helpfulness2 = " + ir.getReviewHelpfulnessDenominator(reviewID) //);
                             + " || should be: " + testReviews.get(reviewID).getHelpfulness2());
             System.out.println(
-                    "num of tokens = " + ir.getReviewLength(reviewID)
+                    "num of tokens = " + ir.getReviewLength(reviewID)  //);
                             + " || should be: " + testReviews.get(reviewID).getNumOfTokens());
             System.out.println("-------- review " + reviewID + " end ------------");
         }
 
         testTokens = new HashMap<>();
+//        testTokens.put("aa", new int[]{2, 3});
         testTokens.put("it", new int[]{591, 1504});
         testTokens.put("allergy", new int[]{5, 6});
         testTokens.put("chicken", new int[]{23, 30});
@@ -90,10 +94,36 @@ public class Tests {
         System.out.println("num of tokens: " + ir.getTokenSizeOfReviews());
         for (String token: testTokens.keySet()) {
             System.out.println("------ token " + token + "-----");
-            System.out.println("getTokenFrequency: " + ir.getTokenFrequency(token)); // + " || should be: " + testTokens.get(token)[0]);
-            System.out.println("getTokenCollectionFrequency " + ir.getTokenCollectionFrequency(token) ); //+ " || should be: " + testTokens.get(token)[1]);
-//            System.out.println(ir.getReviewsWithToken(token));
+            System.out.println("getTokenFrequency: " + ir.getTokenFrequency(token)
+                    + " || should be: " + testTokens.get(token)[0]);
+            System.out.println("getTokenCollectionFrequency " + ir.getTokenCollectionFrequency(token)
+                    + " || should be: " + testTokens.get(token)[1]);
+
+            long start = currentTimeMillis();
+            ir.getReviewsWithToken(token);
+            long end = currentTimeMillis();
+            System.out.println("getReviewsWithToken: " + token + ", time: " + (end - start));
+
+            getReviewsWithToken(ir, token);
             System.out.println("------ token " + token + " end -----");
+        }
+    }
+
+    private static void getReviewsWithToken(IndexReader ir, String token) {
+        Enumeration e;
+//        System.out.println("getReviewsWithToken: " + token); // problem
+        e = ir.getReviewsWithToken(token);
+        File termResults = new File("getReviewsWithToken_TEST_" + token);
+        try {
+            FileWriter writer = new FileWriter(termResults);
+            while (e.hasMoreElements()) {
+//                System.out.println(e.nextElement());
+                writer.write(e.nextElement().toString() + "\n");
+            }
+            writer.close();
+        } catch (IOException ex) {
+            System.out.println("failed to write termResults: " + token);
+            ex.printStackTrace();
         }
     }
 
@@ -116,7 +146,11 @@ public class Tests {
     public static void main(String[] args)
     {
         removeIndex();
-        buildIndex();
-//        readTest();
+        try {
+            buildIndex();
+            readTest();
+        } catch (OutOfMemoryError e) {
+            e.printStackTrace();
+        }
     }
 }

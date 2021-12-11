@@ -87,7 +87,7 @@ public class Main {
         String filename;
 //        filename = "/cs/+/course/webdata/movies.txt";
 //        filename = "/cs/usr/eranhashmo/temp/data_place/finefoods.txt.gz";
-        filename = "100.txt";
+        filename = "1000.txt";
 
 //        System.out.println((double)3/2);
 //        sb.testing(filename);
