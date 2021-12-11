@@ -338,16 +338,9 @@ public class IndexWriter {
 
                         lastPointer = intermediateFile.getFilePointer();
 
-//                        if (intermediateFile.getFilePointer() == intermediateFile.length()) {
-//                            lastPointer = intermediateFile.getFilePointer();
-//                            break;
-//                        }
-//                        lastPointer = intermediateFile.getFilePointer();
-
                         if (intermediateFile.getFilePointer() >= nextPointer) {
                             break;
                         }
-
                         cur = intermediateFile.readCouple();
                     }
                     filePointers.set(p, lastPointer);

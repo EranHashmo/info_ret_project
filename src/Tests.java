@@ -104,7 +104,7 @@ public class Tests {
             long end = currentTimeMillis();
             System.out.println("getReviewsWithToken: " + token + ", time: " + (end - start));
 
-            getReviewsWithToken(ir, token);
+//            getReviewsWithToken(ir, token);
             System.out.println("------ token " + token + " end -----");
         }
     }
