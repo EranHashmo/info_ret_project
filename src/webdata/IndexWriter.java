@@ -30,7 +30,6 @@ public class IndexWriter {
     public static final String INTERMEDIATE_TOKEN_FILE2 = "intermediate_token_file2";
     public static final String INTERMEDIATE_SEPARATOR = "$";
 
-//    private int termPointer;
     private int[] termLengths;
 
     public IndexWriter() {
@@ -202,8 +201,6 @@ public class IndexWriter {
      * @throws IOException
      */
     private void buildDictionary(String dir) throws IOException{
-//        termPointer = 0;
-
         long start = currentTimeMillis();
         ArrayList<Long> filePointers = externalSortFirst(dir);
         long end = currentTimeMillis();
@@ -285,7 +282,7 @@ public class IndexWriter {
         ArrayList<Long> filePointers = new ArrayList<>(blockPointers);
         System.out.println("block pointers: " + blockPointers.size()); // debug
         int writeTermPointer = 0;
-        int curLength;
+//        int curLength;
         int curTermIndex = 0;
         char[] nextTermArr;
         String nextTerm;
@@ -299,9 +296,10 @@ public class IndexWriter {
 
         try {
             while (activePointers.size() > 0) {
-                curLength = termLengths[curTermIndex];
-                nextTermArr = new char[curLength];
-                termReader.read(nextTermArr, 0, curLength);
+//                curLength = termLengths[curTermIndex];
+                nextTermArr = new char[termLengths[curTermIndex]];
+//                termReader.read(nextTermArr, 0, termLengths[curTermIndex]);
+                termReader.read(nextTermArr, 0, termLengths[curTermIndex]);
                 nextTerm = new String(nextTermArr);
                 curTermIndex++;
 

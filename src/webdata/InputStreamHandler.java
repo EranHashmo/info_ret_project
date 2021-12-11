@@ -3,9 +3,6 @@ package webdata;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Scanner;
 
 public class InputStreamHandler {
     private RandomAccessFile reader;
@@ -46,8 +43,8 @@ public class InputStreamHandler {
 
     /**
      * @param bufferSize: number of couples to read
-     * @return
-     * @throws IOException
+     * @return ArrayList of couples read.
+     * @throws IOException if readCouple fail at some point.
      */
     public ArrayList<TokenCouple> readCouples(int bufferSize)
             throws IOException{
@@ -63,7 +60,7 @@ public class InputStreamHandler {
     /**
      * Read a single couple (reviewID, term).
      * @return a new TokenCouple object.
-     * @throws IOException
+     * @throws IOException if a read method failed.
      */
     public TokenCouple readCouple() throws IOException{
         int reviewID = readInt();
@@ -75,7 +72,7 @@ public class InputStreamHandler {
     /**
      * Helper method for readTriplets
      * Reads the term of the next triplet in the file.
-     * @return
+     * @return String: the term read
      */
     private String readTerm() throws IOException {
         char curChar;

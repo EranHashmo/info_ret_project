@@ -8,7 +8,6 @@ import java.util.List;
 public class OutputStreamHandler {
 
     private RandomAccessFile writer;
-//    private FileOutputStream os;
     private BufferedOutputStream bos;
     private long writerIndex;
 
@@ -28,13 +27,11 @@ public class OutputStreamHandler {
         writerIndex = 0;
     }
 
-    public long getFilePointer() throws IOException{
-//        return writer.getFilePointer();
+    public long getFilePointer() {
         return writerIndex;
     }
 
     public void seek(long filePointer) throws IOException {
-//        os.flush();
         bos.flush();
         writer.seek(filePointer);
         writerIndex = filePointer;
@@ -47,24 +44,10 @@ public class OutputStreamHandler {
     }
 
     /**
-     * Write a single token triplet: (reviewID, frequency, term) onto a temporary file for external sort.
-     * @param term: String, the term of the token.
-     * @param reviewID: review in which the token was found.
-     * @param frequency: number of times the term appears in the review corresponding to reviewID
-     * @throws IOException
-     */
-    public void writeTriplet(String term, int reviewID, short frequency) throws
-            IOException{
-        writeInt(reviewID);
-        writeShort(frequency);
-        writeString(term + IndexWriter.INTERMEDIATE_SEPARATOR);
-    }
-
-    /**
      * Write a single token couple: (reviewID, term) onto a temporary file for external sort.
      * @param term: String, the term of the token.
      * @param reviewID: review in which the token was found.
-     * @throws IOException
+     * @throws IOException if one of the write method failed
      */
     public void writeCouple(String term, int reviewID) throws
             IOException{
@@ -73,44 +56,27 @@ public class OutputStreamHandler {
     }
 
     /**
-     * write multiple token triplets from a list after sorting the triplets by term
-     *  and a secondary sort by reviewID
-     * @param list: list of token triplets. serves as a buffer to read, sort and write blocks
-     *            of triplets into disk
-     * @throws IOException
-     */
-    public void writeTripletsFromList(List<TokenTriplet> list) throws IOException{
-        for (TokenTriplet t: list) {
-            writeTriplet(t.getTerm(), t.getReviewID(), t.getFrequency());
-        }
-    }
-
-    /**
      * Write given string to given file in byte format.
      * @param str: string to write.
-     * @throws IOException
+     * @throws IOException if write action failed
      */
     public void writeString(String str) throws IOException {
         byte[] bytes = str.getBytes(StandardCharsets.UTF_8);
-//        os.write(bytes);
         bos.write(bytes);
         writerIndex += bytes.length;
     }
 
     public void writeShort(short value) throws IOException{
-//        os.write(ByteBuffer.allocate(Short.BYTES).putShort(value).array());
         bos.write(ByteBuffer.allocate(Short.BYTES).putShort(value).array());
         writerIndex += Short.BYTES;
     }
 
     public void writeInt(int value) throws IOException{
-//        os.write(ByteBuffer.allocate(Integer.BYTES).putInt(value).array());
         bos.write(ByteBuffer.allocate(Integer.BYTES).putInt(value).array());
         writerIndex += Integer.BYTES;
     }
 
     public void writeLong(long value) throws IOException {
-//        os.write(ByteBuffer.allocate(Long.BYTES).putLong(value).array());
         bos.write(ByteBuffer.allocate(Long.BYTES).putLong(value).array());
         writerIndex += Long.BYTES;
     }
@@ -155,9 +121,7 @@ public class OutputStreamHandler {
     }
 
     public void close() throws IOException{
-//        os.flush();
         bos.flush();
         bos.close();
-//        writer.close();
     }
 }
