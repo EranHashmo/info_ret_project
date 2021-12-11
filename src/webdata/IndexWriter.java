@@ -170,7 +170,7 @@ public class IndexWriter {
      * - term is the string associated with the token,
      * - reviewID is an integer given to the review.
      * Dump spaces and non-alphanumeric characters.
-     * Writes the triplets into an intermediate file to save on disk while reading the rest of the queries.
+     * Writes the couples into an intermediate file to save on disk while reading the rest of the queries.
      * @param text review text field.
      * @param reviewID  Integer, starts from 1
      * @param intermediateFileWriter writes the couple to the temporary file.
@@ -195,7 +195,7 @@ public class IndexWriter {
 
     /**
      * Manage the construction of the dictionary:
-     *  first, read blocks of triplets from the temporary file, sort them and rewrite the sorted triplets
+     *  first, read blocks of couples from the temporary file, sort them and rewrite the sorted couples
      *      into the file
      *  later, the sorted blocks are read term-by-term in order to write the dictionary.
      * @param dir: dictionary to write the index files to.
@@ -219,7 +219,7 @@ public class IndexWriter {
      * All tokens from the temporary file are read, sorted, and then rewritten, block-by-block.
 //     * @param sortFileReader: temporary file for external sort
 //     * @param sortFileWriter: temporary file for external sort
-     * @return A list of file pointers, each points at the beginning of a block of triplets in the file
+     * @return A list of file pointers, each points at the beginning of a block of couples in the file
      * @throws IOException
      */
     private ArrayList<Long> externalSortFirst(String dir) throws IOException
